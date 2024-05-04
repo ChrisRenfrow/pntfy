@@ -4,29 +4,15 @@ use std::{
     thread,
 };
 
-use clap::Parser;
 use reqwest::blocking::Client;
 use uuid::Uuid;
 
-#[derive(Debug, Parser)]
-#[command(version, about, long_about = None)]
-/// A tool for notifying when a command fails or succeeds
-struct Cli {
-    command: String,
-    #[arg(short, long)]
-    // TODO: Unimplemented
-    // /// Suppress displaying ASCII QR code
-    // no_qr: bool,
-    #[arg(short, long)]
-    /// Use a custom notification topic [default: (generated UUID)]
-    topic: Option<String>,
-    /// The ntfy server url
-    #[arg(long, default_value = "http://ntfy.sh")]
-    ntfy_server: Option<String>,
-}
+mod cli;
+
+use cli::Cli;
 
 fn main() {
-    let args = Cli::parse();
+    let args = Cli::get_args();
 
     let server = args.ntfy_server.unwrap();
     let topic = args.topic.unwrap_or(Uuid::new_v4().to_string());
