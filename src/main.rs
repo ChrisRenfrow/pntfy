@@ -27,12 +27,18 @@ fn main() {
         &args.command, &request_url
     );
 
-    let mut child = Command::new(&command[0])
+    let mut child = match Command::new(&command[0])
         .args(&command[1..])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to start child process");
+    {
+        Ok(child) => child,
+        Err(err) => {
+            eprintln!("[pntfy] Couldn't launch command! {}\n\tExiting...", err);
+            return;
+        }
+    };
 
     let stdout = child.stdout.take().expect("Failed to open stdout");
     let stderr = child.stderr.take().expect("Failed to open stderr");
@@ -56,9 +62,9 @@ fn main() {
         move || {
             for line in stderr_reader.lines().map_while(Result::ok) {
                 last_stderr = line.clone();
-                notifier
-                    .notify(format!("New error: {last_stderr}").as_str())
-                    .expect("Err sending notification");
+                if let Err(err) = notifier.notify(format!("New error: {last_stderr}").as_str()) {
+                    eprintln!("[pntfy] {}", err);
+                }
                 eprintln!("{}", line);
             }
             last_stderr
@@ -76,6 +82,6 @@ fn main() {
         notifier.notify(format!("Command failed! Last error: {last_stderr}").as_str())
     } {
         Ok(_res) => println!("[pntfy] Sent notification."),
-        Err(_err) => eprintln!("[pntfy] Failed to send notification!"),
+        Err(err) => eprintln!("[pntfy] {err}"),
     }
 }
