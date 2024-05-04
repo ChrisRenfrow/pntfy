@@ -1,3 +1,5 @@
+**Disclaimer:** This project is very much WIP as of 2024-05-04, use at your own discretion.
+
 # Process Notify (pntfy)
 
 ## Is this you?
@@ -10,53 +12,31 @@ Have you ever started up a long-running process, only to come back hours later t
 
 ## Example
 
-``` sh
-pntfy ./long-running-process.sh
+All you need to do to get started is pass the command/program you wish to monitor to `pntfy`.
 
-█████████████████████████████████████
-█████████████████████████████████████
-████ ▄▄▄▄▄ █▀ █▀▀█▄▀██▀▄██ ▄▄▄▄▄ ████
-████ █   █ █▀ ▄ ▀▀▄▀ ▀ █▀█ █   █ ████
-████ █▄▄▄█ █▀█ █ ▄▄▀▀▄▄▄▀█ █▄▄▄█ ████
-████▄▄▄▄▄▄▄█▄█▄█ █ ▀▄█▄█▄█▄▄▄▄▄▄▄████
-████▄  ▄▄█▄▄  ▄█  ██▄▄▀▀▀▄▀ ▀▄▀▄▀████
-████▄█▄█▄█▄██ ▀█ █   █▀▀▄▄▀▀█▄█▀▀████
-█████▄ ▄▄ ▄▀█ ▀█ ▄▀██▄▀▀▄▀▀█▀▄ ▀▀████
-█████ ██▄█▄▀█ ▀ █▄█▄█▄▀▀█ ▄▄▄█▄▀█████
-████ ██ ▄▄▄ ▄▄ ▄▄▄▀▄▄▄▄▀▀ ▀ ▀▀ █▀████
-████ █▀█▄▄▄█ ▄▀█ █▀▄▄▄██▀█ ▀▀▄▄▀▀████
-████▄█▄█▄█▄▄▀██ ▄▄▄▄▀▄▄█ ▄▄▄ ▀ ▀ ████
-████ ▄▄▄▄▄ █▄██▄▀▄█ ▄▄▄  █▄█  ▄█▀████
-████ █   █ █ ██▀ ▄▄▄▀  ▀▄▄▄▄▄▀   ████
-████ █▄▄▄█ █ ▄██ ▄▄ ▀██ ▀ ▄▄ ▀▄ █████
-████▄▄▄▄▄▄▄█▄▄▄████▄▄▄▄████▄▄▄▄██████
-█████████████████████████████████████
-█████████████████████████████████████
-
-Scan or click (https://ntfy.sh/a5db3a00-df73-4ac2-9619-21bf48831800) to subscribe to this process's topic.
-
-─( Process Output )────────────────────────────────────────────────────────────────────────────────────────
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sodales, nunc sed semper dignissim, dolor 
-erat fermentum ex, vitae ultricies ligula lorem ac ante. Cras at lectus sed ligula laoreet rhoncus id at 
-nisi. Vivamus facilisis quam feugiat risus consectetur, ut luctus ligula cursus. Nam accumsan ipsum vel 
-erat fringilla consequat. Suspendisse vel ante vitae libero porta volutpat ut eget tellus. Quisque lacinia 
-hendrerit ullamcorper. Pellentesque lacinia iaculis velit, placerat gravida felis molestie ac. In sed 
-scelerisque diam. Praesent sagittis turpis id leo blandit aliquam. Aliquam at dui dapibus, congue ex
-
+``` txt
+$ pntfy ./test.sh
 ```
 
-Some time later...
+`pntfy` will generate a ntfy URL, which when followed will take you straight to the ntfy dashboard.
 
-```
-─( Process Output )────────────────────────────────────────────────────────────────────────────────────────
-ut luctus ligula cursus. Nam accumsan ipsum vel erat fringilla consequat. Fin.
+![Terminal output](/assets/2024-05-04-example-1.png)
 
-Error: Ran out of Lorem Ipsum!
-[pntfy: Exit 1 received, notifying]
-```
+`pntfy` will issue notifications for errors, as well as the exit status of the monitored program.
 
-Any subscribed devices will receive a notification announcing the process failure.
+![Ntfy.sh dashboard](/assets/2024-05-04-example-2.png)
 
 ## Usage
 
-> TBD
+```
+Usage: pntfy [OPTIONS] <COMMAND>
+
+Arguments:
+  <COMMAND>
+
+Options:
+  -t, --topic <TOPIC>              Use a custom notification topic [default: (generated UUID)]
+      --ntfy-server <NTFY_SERVER>  The ntfy server url [default: http://ntfy.sh]
+  -h, --help                       Print help
+  -V, --version                    Print version
+```
