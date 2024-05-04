@@ -4,12 +4,13 @@ use std::{
     thread,
 };
 
-use reqwest::blocking::Client;
 use uuid::Uuid;
 
 mod cli;
+mod notifier;
 
 use cli::Cli;
+use notifier::Notifier;
 
 fn main() {
     let args = Cli::get_args();
@@ -17,39 +18,12 @@ fn main() {
     let server = args.ntfy_server.unwrap();
     let topic = args.topic.unwrap_or(Uuid::new_v4().to_string());
     let request_url = format!("{server}/{topic}");
-
-    let err_notification = {
-        let request_url = request_url.clone();
-        move |msg: String| {
-            Client::new()
-                .post(&request_url)
-                .body(format!("New error: {msg}"))
-                .send()
-        }
-    };
-    let success_notification = {
-        let request_url = request_url.clone();
-        move |msg: String| {
-            Client::new()
-                .post(&request_url)
-                .body(format!("Command successful! Last message: {msg}"))
-                .send()
-        }
-    };
-    let fail_notification = {
-        let request_url = request_url.clone();
-        move |msg: String| {
-            Client::new()
-                .post(&request_url)
-                .body(format!("Command failed! Last error: {msg}"))
-                .send()
-        }
-    };
-
     let command = shell_words::split(&args.command).expect("problem splitting command");
 
+    let notifier = Notifier::new(&request_url);
+
     println!(
-        "Running `{:?}`...\nClick this url to subscribe to alerts: {}\n---------------",
+        "Running {}...\nClick this url to subscribe to alerts: {}\n---------------",
         &args.command, &request_url
     );
 
@@ -77,13 +51,18 @@ fn main() {
         last_stdout
     });
 
-    let stderr_handle = thread::spawn(move || {
-        for line in stderr_reader.lines().map_while(Result::ok) {
-            last_stderr = line.clone();
-            err_notification(line.clone()).expect("Err sending notification");
-            eprintln!("{}", line);
+    let stderr_handle = thread::spawn({
+        let notifier = notifier.clone();
+        move || {
+            for line in stderr_reader.lines().map_while(Result::ok) {
+                last_stderr = line.clone();
+                notifier
+                    .notify(format!("New error: {last_stderr}").as_str())
+                    .expect("Err sending notification");
+                eprintln!("{}", line);
+            }
+            last_stderr
         }
-        last_stderr
     });
 
     let last_stdout = stdout_handle.join().expect("Thread panicked");
@@ -91,10 +70,10 @@ fn main() {
 
     match if child.wait().expect("Failed to wait on child").success() {
         println!("[pntfy] Command completed successfully.");
-        success_notification(last_stdout)
+        notifier.notify(format!("Command successful! Last message: {last_stdout}").as_str())
     } else {
         eprintln!("[pntfy] Command failed!");
-        fail_notification(last_stderr)
+        notifier.notify(format!("Command failed! Last error: {last_stderr}").as_str())
     } {
         Ok(_res) => println!("[pntfy] Sent notification."),
         Err(_err) => eprintln!("[pntfy] Failed to send notification!"),
