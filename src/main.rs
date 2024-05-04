@@ -5,6 +5,8 @@ use std::{
 };
 
 use clap::Parser;
+use reqwest::blocking::Client;
+use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -12,22 +14,58 @@ use clap::Parser;
 struct Cli {
     command: String,
     #[arg(short, long)]
-    /// Suppress displaying ASCII QR code
-    no_qr: bool,
+    // TODO: Unimplemented
+    // /// Suppress displaying ASCII QR code
+    // no_qr: bool,
     #[arg(short, long)]
     /// Use a custom notification topic [default: (generated UUID)]
     topic: Option<String>,
     /// The ntfy server url
-    #[arg(long, default_value = "https://ntfy.sh")]
+    #[arg(long, default_value = "http://ntfy.sh")]
     ntfy_server: Option<String>,
 }
 
 fn main() {
     let args = Cli::parse();
 
+    let server = args.ntfy_server.unwrap();
+    let topic = args.topic.unwrap_or(Uuid::new_v4().to_string());
+    let request_url = format!("{server}/{topic}");
+
+    let err_notification = {
+        let request_url = request_url.clone();
+        move |msg: String| {
+            Client::new()
+                .post(&request_url)
+                .body(format!("New error: {msg}"))
+                .send()
+        }
+    };
+    let success_notification = {
+        let request_url = request_url.clone();
+        move |msg: String| {
+            Client::new()
+                .post(&request_url)
+                .body(format!("Command successful! Last message: {msg}"))
+                .send()
+        }
+    };
+    let fail_notification = {
+        let request_url = request_url.clone();
+        move |msg: String| {
+            Client::new()
+                .post(&request_url)
+                .body(format!("Command failed! Last error: {msg}"))
+                .send()
+        }
+    };
+
     let command = shell_words::split(&args.command).expect("problem splitting command");
 
-    println!("{:?}", command);
+    println!(
+        "Running `{:?}`...\nClick this url to subscribe to alerts: {}\n---------------",
+        &args.command, &request_url
+    );
 
     let mut child = Command::new(&command[0])
         .args(&command[1..])
@@ -56,17 +94,23 @@ fn main() {
     let stderr_handle = thread::spawn(move || {
         for line in stderr_reader.lines().map_while(Result::ok) {
             last_stderr = line.clone();
+            err_notification(line.clone()).expect("Err sending notification");
             eprintln!("{}", line);
         }
         last_stderr
     });
 
-    let status = child.wait().expect("Failed to wait on child");
-
     let last_stdout = stdout_handle.join().expect("Thread panicked");
     let last_stderr = stderr_handle.join().expect("Thread panicked");
 
-    println!("Child process exited {}", status);
-    println!("last output line:\n{}", last_stdout);
-    println!("last error line received:\n{}", last_stderr);
+    match if child.wait().expect("Failed to wait on child").success() {
+        println!("[pntfy] Command completed successfully.");
+        success_notification(last_stdout)
+    } else {
+        eprintln!("[pntfy] Command failed!");
+        fail_notification(last_stderr)
+    } {
+        Ok(_res) => println!("[pntfy] Sent notification."),
+        Err(_err) => eprintln!("[pntfy] Failed to send notification!"),
+    }
 }
