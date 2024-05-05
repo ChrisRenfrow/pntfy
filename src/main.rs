@@ -15,12 +15,12 @@ use notifier::Notifier;
 fn main() {
     let args = Cli::get_args();
 
-    let server = args.ntfy_server.unwrap();
-    let topic = args.topic.unwrap_or(Uuid::new_v4().to_string());
+    let server = args.clone().ntfy_server.unwrap();
+    let topic = args.clone().topic.unwrap_or(Uuid::new_v4().to_string());
     let request_url = format!("{server}/{topic}");
     let command = shell_words::split(&args.command).expect("problem splitting command");
 
-    let notifier = match Notifier::new(&request_url) {
+    let notifier = match Notifier::new(&request_url, Some(args.clone().into())) {
         Ok(notifier) => notifier,
         Err(err) => {
             eprintln!("Error parsing URL: {}", err);
