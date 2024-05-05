@@ -20,13 +20,15 @@ fn main() {
     let request_url = format!("{server}/{topic}");
     let command = shell_words::split(&args.command).expect("problem splitting command");
 
-    let notifier = match Notifier::new(&request_url, Some(args.clone().into())) {
+    let mut notifier = match Notifier::new(&request_url) {
         Ok(notifier) => notifier,
         Err(err) => {
             eprintln!("Error parsing URL: {}", err);
             exit(1);
         }
     };
+
+    notifier.configure(args.clone().into());
 
     println!(
         "Running {}...\nClick this url to subscribe to alerts: {}\n---------------",

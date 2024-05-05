@@ -17,26 +17,26 @@ pub struct Notifier {
 }
 
 impl Notifier {
-    pub fn new(url: &str, options: Option<NtfyOptions>) -> Result<Self, Box<dyn error::Error>> {
-        let mut headers = HeaderMap::new();
-
-        if let Some(options) = &options {
-            if !options.firebase {
-                headers.append("X-Firebase", "no".parse().unwrap());
-            }
-            if !options.caching {
-                headers.append("X-Caching", "no".parse().unwrap());
-            }
-        }
-
+    pub fn new(url: &str) -> Result<Self, Box<dyn error::Error>> {
         let endpoint: Url = url.try_into()?;
 
         Ok(Self {
             client: Arc::new(Client::new()),
             endpoint,
-            options,
-            headers,
+            options: None,
+            headers: HeaderMap::new(),
         })
+    }
+
+    pub fn configure(&mut self, options: NtfyOptions) {
+        self.options = Some(options.clone());
+
+        if !options.firebase {
+            self.headers.append("X-Firebase", "no".parse().unwrap());
+        }
+        if !options.caching {
+            self.headers.append("X-Caching", "no".parse().unwrap());
+        }
     }
 
     pub fn notify(&self, message: &str) -> Result<Response, Error> {
