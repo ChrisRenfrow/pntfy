@@ -2,7 +2,7 @@ use reqwest::{
     blocking::{Client, Response},
     Error, Url,
 };
-use std::sync::Arc;
+use std::{error, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Notifier {
@@ -11,11 +11,12 @@ pub struct Notifier {
 }
 
 impl Notifier {
-    pub fn new(url: &str) -> Self {
-        Self {
+    pub fn new(url: &str) -> Result<Self, Box<dyn error::Error>> {
+        let endpoint: Url = url.try_into()?;
+        Ok(Self {
             client: Arc::new(Client::new()),
-            endpoint: url.try_into().expect("Problem parsing URL"),
-        }
+            endpoint,
+        })
     }
 
     pub fn notify(&self, message: &str) -> Result<Response, Error> {

@@ -1,6 +1,6 @@
 use std::{
     io::{BufRead, BufReader},
-    process::{Command, Stdio},
+    process::{exit, Command, Stdio},
     thread,
 };
 
@@ -20,7 +20,13 @@ fn main() {
     let request_url = format!("{server}/{topic}");
     let command = shell_words::split(&args.command).expect("problem splitting command");
 
-    let notifier = Notifier::new(&request_url);
+    let notifier = match Notifier::new(&request_url) {
+        Ok(notifier) => notifier,
+        Err(err) => {
+            eprintln!("Error parsing URL: {}", err);
+            exit(1);
+        }
+    };
 
     println!(
         "Running {}...\nClick this url to subscribe to alerts: {}\n---------------",
@@ -36,7 +42,7 @@ fn main() {
         Ok(child) => child,
         Err(err) => {
             eprintln!("[pntfy] Couldn't launch command! {}\n\tExiting...", err);
-            return;
+            exit(1);
         }
     };
 
