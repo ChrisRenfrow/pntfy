@@ -4,7 +4,7 @@
 
 ## Is this you?
 
-Have you ever started up a long-running process, only to come back hours later to find it failed within seconds of leaving it unattended? Would you want to know if a process failed, or succeeded, earlier than whenever you remember to check on it? If you answered yes to either of those questions, `pntfy` might be an answer for you.
+Have you ever started up a long-running process, only to come back hours later to find it failed within seconds of leaving it unattended? Would you want to know if a process failed, or succeeded, earlier than whenever you remember to check on it? If you answered yes to either of those questions, `pntfy` might be helpful to you.
 
 ## About
 
@@ -29,14 +29,18 @@ $ pntfy ./test.sh
 ## Usage
 
 ```
+A tool for notifying when a command fails or succeeds
+
 Usage: pntfy [OPTIONS] <COMMAND>
 
 Arguments:
-  <COMMAND>
+  <COMMAND>  The command to monitor
 
 Options:
-  -t, --topic <TOPIC>              Use a custom notification topic [default: (generated UUID)]
+  -t, --topic <TOPIC>              Use a custom notification topic
       --ntfy-server <NTFY_SERVER>  The ntfy server url [default: http://ntfy.sh]
-  -h, --help                       Print help
+  -c, --no-cache                   Request that the ntfy server disables caching messages
+  -f, --no-firebase                Request that the ntfy server disables forwarding messages to Firebase
+  -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version
 ```
